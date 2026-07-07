@@ -1,0 +1,10 @@
+logs/
+__pycache__/
+*.pyc
+config
+venv/
+.venv/
+.DS_Store
+.idea
+.env
+plugins
