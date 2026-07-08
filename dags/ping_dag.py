@@ -4,7 +4,7 @@ from airflow.operators.python import PythonOperator
 import logging
 
 def run_func():
-    logging.info("Running every x hours")
+    logging.info("Running every 5 minutes")
 
 def alert_on_failure(context):
     dag_id = context["dag"].dag_id
