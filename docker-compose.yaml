@@ -34,6 +34,12 @@ x-airflow-common:
     postgres:
       condition: service_healthy
 
+x-lakekeeper-env:
+  &lakekeeper-env
+  LAKEKEEPER__PG_ENCRYPTION_KEY: ${LAKEKEEPER_ENCRYPTION_KEY}
+  LAKEKEEPER__PG_DATABASE_URL_READ: postgresql://${LAKEKEEPER_DB_USERNAME}:${LAKEKEEPER_DB_PASSWORD}@lakekeeper-db:5432/lakekeeper
+  LAKEKEEPER__PG_DATABASE_URL_WRITE: postgresql://${LAKEKEEPER_DB_USERNAME}:${LAKEKEEPER_DB_PASSWORD}@lakekeeper-db:5432/lakekeeper
+
 services:
   postgres:
     image: postgres:13
@@ -252,6 +258,46 @@ services:
         mc mb --ignore-existing local/bronze;
         exit 0;
         "
+  lakekeeper-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${LAKEKEEPER_DB_USERNAME}
+      POSTGRES_PASSWORD: ${LAKEKEEPER_DB_PASSWORD}
+      POSTGRES_DB: lakekeeper
+    volumes:
+      - lakekeeper-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "lakekeeper" ]
+      interval: 10s
+      retries: 5
+    restart: always
+
+  lakekeeper-migrate:
+      image: quay.io/lakekeeper/catalog:latest
+      command: [ "migrate" ]
+      environment:
+        <<: *lakekeeper-env
+      depends_on:
+        lakekeeper-db:
+          condition: service_healthy
+      restart: "no"
+
+  lakekeeper:
+      image: quay.io/lakekeeper/catalog:latest
+      command: [ "serve" ]
+      environment:
+        <<: *lakekeeper-env
+        LAKEKEEPER__AUTHZ_BACKEND: allowall
+      ports:
+        - "8181:8181"
+      depends_on:
+        lakekeeper-migrate:
+          condition: service_completed_successfully
+        lakekeeper-db:
+          condition: service_healthy
+      restart: always
+
 volumes:
   postgres-db-volume:
   minio-data:
+  lakekeeper-db-volume:
