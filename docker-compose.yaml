@@ -246,7 +246,7 @@ services:
       start_period: 10s
     restart: always
 
-# create bronze layer
+# create bronze & lakehouse bucket on minio
   minio-init:
       image: minio/mc:latest
       depends_on:
@@ -256,6 +256,7 @@ services:
         /bin/sh -c "
         mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin};
         mc mb --ignore-existing local/bronze;
+        mc mb --ignore-existing local/lakehouse;
         exit 0;
         "
   lakekeeper-db:
@@ -296,6 +297,32 @@ services:
         lakekeeper-db:
           condition: service_healthy
       restart: always
+      healthcheck:
+        test: ["CMD", "/home/nonroot/lakekeeper", "healthcheck"]
+        interval: 30s
+        timeout: 10s
+        retries: 3
+        start_period: 10s
+
+  # add dbt
+  dbt:
+    image: python:3.11-slim
+    volumes:
+      - ./dbt_etl:/dbt_etl
+      - ~/.dbt:/root/.dbt
+    working_dir: /dbt_etl
+    environment:
+      <<: *lakekeeper-env
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_REGION: ${S3_REGION}
+      CATALOG_ENDPOINT: ${CATALOG_ENDPOINT}
+    command: >
+      sh -c "apt-get update && apt-get install -y git && pip install dbt-duckdb && tail -f /dev/null"
+    depends_on:
+      lakekeeper:
+          condition: service_healthy
 
 volumes:
   postgres-db-volume:
