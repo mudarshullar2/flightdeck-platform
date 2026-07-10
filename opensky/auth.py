@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-import requests, os, logging
+import requests, os
 
 TOKEN_URL = "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token"
 CLIENT_ID = os.getenv("CLIENT_ID")
@@ -17,7 +17,6 @@ class TokenManager:
         return self._refresh()
 
     def _refresh(self):
-        logging.info("CLIENT_ID=%r SECRET set=%s", CLIENT_ID, bool(CLIENT_SECRET))
         r = requests.post(TOKEN_URL,
                           data={
                               "grant_type": "client_credentials",
