@@ -8,8 +8,9 @@ airport = os.getenv("AIRPORT")
 
 def ingest_flights(**context):
     logical = context["logical_date"]
-    end = int(logical.timestamp())
-    begin = int((logical - timedelta(hours=1)).timestamp())
+    target = logical - timedelta(days=2)
+    end = int(target.timestamp())
+    begin = int((target - timedelta(hours=1)).timestamp())
 
     tokenManager = TokenManager()
     client = OpenSkyClient(tokenManager)
