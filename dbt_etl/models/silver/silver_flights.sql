@@ -1,4 +1,4 @@
-{{ config(materialized="incremental", incremental_strategy="append", unique_key=["icao24", "first_seen", "last_seen"] ,database="flightdeck_iceberg_catalog", schema="silver") }}
+{{ config(materialized="external", location="s3://lakehouse/silver/silver_flights.parquet", format="parquet") }}
 
 select
     icao24,

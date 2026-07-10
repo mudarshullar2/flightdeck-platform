@@ -1,5 +1,6 @@
 from opensky import TokenManager, OpenSkyClient, FlightExtractor, BronzeLoader
 from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
 from airflow import DAG
 from datetime import datetime, timedelta
 import logging, os
@@ -49,3 +50,10 @@ with DAG(
         task_id="ingest_flights",
         python_callable=ingest_flights
     )
+
+    dbt_run = BashOperator(
+        task_id="dbt_run",
+        bash_command="docker exec flightdeck-platform-dbt-1 dbt run --project-dir /dbt_etl --profiles-dir /root/.dbt"
+    )
+
+    ingest >> dbt_run
