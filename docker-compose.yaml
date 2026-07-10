@@ -26,6 +26,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/opensky:/opt/airflow/opensky
+    - /var/run/docker.sock:/var/run/docker.sock
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -324,7 +325,27 @@ services:
       lakekeeper:
           condition: service_healthy
 
+  superset:
+    build: ./superset
+    ports:
+      - "8088:8088"
+    environment:
+          SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+          SUPERSET_ADMIN_USERNAME: ${SUPERSET_ADMIN_USERNAME}
+          SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD}
+          SUPERSET_ADMIN_EMAIL: ${SUPERSET_ADMIN_EMAIL}
+    volumes:
+      - superset_home:/app/superset_home
+    command: >
+          bash -c "superset db upgrade &&
+          superset fab create-admin --username $${SUPERSET_ADMIN_USERNAME} --firstname Admin --lastname User --email $${SUPERSET_ADMIN_EMAIL} --password $${SUPERSET_ADMIN_PASSWORD} || true &&
+          superset init &&
+          gunicorn --bind 0.0.0.0:8088 --workers 4 'superset.app:create_app()'"
+    depends_on:
+      lakekeeper:
+        condition: service_healthy
 volumes:
   postgres-db-volume:
   minio-data:
   lakekeeper-db-volume:
+  superset_home:
