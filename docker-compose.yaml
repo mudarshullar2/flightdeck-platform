@@ -307,7 +307,7 @@ services:
 
   # add dbt
   dbt:
-    image: python:3.11-slim
+    build: ./dbt_etl
     volumes:
       - ./dbt_etl:/dbt_etl
       - ~/.dbt:/root/.dbt
@@ -319,11 +319,10 @@ services:
       S3_ENDPOINT: ${S3_ENDPOINT}
       S3_REGION: ${S3_REGION}
       CATALOG_ENDPOINT: ${CATALOG_ENDPOINT}
-    command: >
-      sh -c "apt-get update && apt-get install -y git && pip install dbt-duckdb && tail -f /dev/null"
+    command: tail -f /dev/null
     depends_on:
       lakekeeper:
-          condition: service_healthy
+        condition: service_healthy
 
   superset:
     build: ./superset
