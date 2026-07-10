@@ -8,3 +8,4 @@ venv/
 .idea
 .env
 plugins
+.env.local.testing
