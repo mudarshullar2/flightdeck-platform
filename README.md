@@ -28,7 +28,7 @@ docker compose up -d
 6. In Superset, the dashboard reads the gold layer from MinIo
 
 ## Architecture
-![architecture](docs/flightdeck-platform-draw-io.png)
+![architecture](docs/architecture-draw-io.png)
 
 
 ## Airflow DAG
